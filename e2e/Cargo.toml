@@ -1,0 +1,11 @@
+[package]
+name = "e2e"
+version = "0.0.0"
+edition = "2021"
+publish = false
+
+[dev-dependencies]
+icudtl = { path = ".." }
+# Must be a release built with the same ICU major as the data (77), i.e. one
+# whose `v8::icu` exposes `set_common_data_77`.
+v8 = "=149.4.0"

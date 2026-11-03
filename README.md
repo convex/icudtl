@@ -58,6 +58,7 @@ ICU since 4.4 can read.
 | `base/icudt77l.dat` | The pristine ICU 77.1 data from `deno_core_icudata` 0.77.0 / Chromium. See [`base/README.md`](base/README.md). |
 | `tzdata/*.res` | Unicode's time zone resources for `TZDATA_VERSION`, from `https://github.com/unicode-org/icu-data/tree/main/tzdata/icunew/<version>/44/le`. `44` is the resource bundle format and `le` is little-endian. |
 | `xtask/` | The generator and the data tests. Not published. |
+| `e2e/` | An end-to-end test that loads the data into V8. Not published. |
 | `scripts/update-tzdata.sh` | Downloads a tzdata release and regenerates the data. |
 | `scripts/check-icupkg.sh` | Checks the generated data with ICU's `icupkg`. |
 
@@ -114,6 +115,10 @@ it changes.
 `scripts/check-icupkg.sh` checks the same structure independently, with
 `icupkg` extracting every item from both packages.
 
+`cargo test -p e2e` loads `ICU_DATA` into V8 with the `v8` crate (149.x, built
+with ICU 77). It checks that `Intl.DateTimeFormat` and `Temporal` report the
+right offsets for the same zones. It downloads a prebuilt V8, so it isn't part
+of a plain `cargo test`. CI runs it on every PR.
 
 ## Versioning and branches
 
