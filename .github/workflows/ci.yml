@@ -1,0 +1,42 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main, "icu-*"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - run: rustup toolchain install stable --profile minimal --component rustfmt,clippy
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo fmt --all --check
+      - run: cargo clippy --locked --all-targets -- --deny warnings
+      - name: Check that the generated files are up to date
+        run: cargo xtask generate --check
+      - run: cargo test --locked
+      - name: Check the data with icupkg
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes icu-devtools
+          scripts/check-icupkg.sh
+      - name: Check the published package
+        run: |
+          cargo package --locked --package icudtl
+          cargo package --locked --package icudtl --list
+          size="$(stat --format=%s target/package/icudtl-*.crate)"
+          echo "Package size: $size bytes"
+          if (( size > 10 * 1000 * 1000 )); then
+            echo "::error::The package is over crates.io's 10 MB limit"
+            exit 1
+          fi
+
