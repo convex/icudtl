@@ -38,6 +38,17 @@ fn shipped_data_is_aligned() {
     assert_eq!(ICU_DATA.as_ptr() as usize % 16, 0);
 }
 
+/// ICU reads items in place, so each one must start on a 16-byte boundary of
+/// the package (which `shipped_data_is_aligned` places on one in memory).
+#[test]
+fn shipped_items_are_aligned() {
+    let shipped = Package::parse(ICU_DATA).unwrap();
+    for (name, item) in shipped.names.iter().zip(&shipped.items) {
+        let offset = item.as_ptr() as usize - ICU_DATA.as_ptr() as usize;
+        assert_eq!(offset % 16, 0, "{name} starts at offset {offset}");
+    }
+}
+
 #[test]
 fn only_tz_resources_differ_from_base() {
     let base_bytes = base();

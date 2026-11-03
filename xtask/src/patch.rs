@@ -1,6 +1,10 @@
 //! Replaces items in an ICU common data package (`.dat`).
 //!
-//! Adapted from convex/convex's `crates/isolate/icu_tzdata/patch.rs`.
+//! This is a custom implementation of the package format: no Rust crate writes
+//! ICU4C packages, and ICU's own `icupkg` is a C++ command-line tool. CI checks
+//! the output independently of this code: `scripts/check-icupkg.sh` uses
+//! `icupkg` to extract every item and compares them byte for byte with the
+//! base data and `tzdata/`.
 //!
 //! A package is a `DataHeader` followed by a table of contents: an item count,
 //! then `(name_offset, data_offset)` pairs relative to the start of the table,
