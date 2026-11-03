@@ -1,0 +1,25 @@
+[package]
+name = "icudtl"
+# The major and minor versions track the ICU major version of the data (0.77.x
+# is ICU 77, like `deno_core_icudata`). The patch version is bumped for every
+# tzdata update.
+version = "0.77.0"
+edition = "2021"
+description = "ICU 77 common data (icudtl.dat) for V8, with current IANA time zone data"
+license = "MIT AND Unicode-3.0"
+repository = "https://github.com/convex/icudtl"
+readme = "README.md"
+keywords = ["icu", "v8", "tzdata", "timezone"]
+categories = ["internationalization", "date-and-time"]
+include = [
+    "/Cargo.toml",
+    "/LICENSE-MIT",
+    "/LICENSE-ICU",
+    "/README.md",
+    "/src/icudtl.dat",
+    "/src/lib.rs",
+]
+
+[workspace]
+members = ["xtask"]
+default-members = [".", "xtask"]
