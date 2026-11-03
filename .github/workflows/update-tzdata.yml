@@ -1,0 +1,163 @@
+# Opens a PR when Unicode publishes the ICU time zone resources for a new IANA
+# tzdata release. See "Automation" in the README for the required settings.
+name: Update tzdata
+
+on:
+  schedule:
+    - cron: "23 7 * * *"
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: Branch to update. Leave empty for every supported branch.
+        required: false
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: update-tzdata-${{ inputs.branch }}
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  update:
+    strategy:
+      fail-fast: false
+      matrix:
+        # The branches that get tzdata updates: `main`, plus one `icu-<major>`
+        # branch per older ICU major version that is still in use.
+        branch: ${{ fromJSON(inputs.branch && format('["{0}"]', inputs.branch) || '["main"]') }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create a GitHub App token
+        id: app-token
+        if: vars.TZDATA_APP_CLIENT_ID != ''
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          client-id: ${{ vars.TZDATA_APP_CLIENT_ID }}
+          private-key: ${{ secrets.TZDATA_APP_PRIVATE_KEY }}
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ matrix.branch }}
+          token: ${{ steps.app-token.outputs.token || secrets.TZDATA_UPDATE_TOKEN || github.token }}
+
+      - name: Find the latest tzdata release
+        id: versions
+        env:
+          BRANCH: ${{ matrix.branch }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          latest="$(gh api repos/unicode-org/icu-data/contents/tzdata/icunew \
+            --jq '.[] | select(.type == "dir") | .name' |
+            grep -E '^[0-9]{4}[a-z]+$' | sort | tail -n 1)"
+          current="$(sed -nE 's/^pub const TZDATA_VERSION: &str = "(.*)";$/\1/p' src/lib.rs)"
+          # tzdata versions sort as strings: 2026f < 2026g < 2026z < 2026za < 2027a.
+          newest="$(printf '%s\n' "$current" "$latest" | sort | tail -n 1)"
+          echo "current=$current" >> "$GITHUB_OUTPUT"
+          echo "latest=$latest" >> "$GITHUB_OUTPUT"
+          if [[ "$latest" != "$current" && "$newest" == "$latest" ]]; then
+            echo "update=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::$BRANCH has tzdata $current; updating to $latest"
+          else
+            echo "::notice::$BRANCH has tzdata $current, the latest release is $latest; nothing to do"
+          fi
+
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+        if: steps.versions.outputs.update
+      - name: Update
+        if: steps.versions.outputs.update
+        env:
+          LATEST: ${{ steps.versions.outputs.latest }}
+        run: |
+          rustup toolchain install stable --profile minimal
+          scripts/update-tzdata.sh "$LATEST"
+      - name: Test
+        if: steps.versions.outputs.update
+        run: |
+          cargo test --locked
+          sudo apt-get update
+          sudo apt-get install --yes icu-devtools
+          scripts/check-icupkg.sh
+
+      - name: Check the token
+        if: steps.versions.outputs.update
+        env:
+          APP_TOKEN: ${{ steps.app-token.outputs.token }}
+          PAT: ${{ secrets.TZDATA_UPDATE_TOKEN }}
+        run: |
+          if [[ -n "$APP_TOKEN" ]]; then
+            echo "Using the GitHub App token"
+          elif [[ -n "$PAT" ]]; then
+            echo "Using TZDATA_UPDATE_TOKEN"
+          else
+            echo "::warning::Neither a GitHub App nor TZDATA_UPDATE_TOKEN is configured, so the PR is opened with GITHUB_TOKEN and CI won't run on it. See the README."
+          fi
+      - name: Open or update the PR
+        if: steps.versions.outputs.update
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token || secrets.TZDATA_UPDATE_TOKEN || github.token }}
+          BASE: ${{ matrix.branch }}
+          CURRENT: ${{ steps.versions.outputs.current }}
+          LATEST: ${{ steps.versions.outputs.latest }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          head="tzdata/$BASE/$LATEST"
+          title="Update tzdata to $LATEST"
+          if [[ "$BASE" != main ]]; then title="[$BASE] $title"; fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch --create "$head"
+          git add --all
+          git commit --quiet --message "$title"
+          # Don't push (and rerun CI) if the open PR already has these changes.
+          if git fetch --quiet origin "refs/heads/$head:refs/remotes/origin/$head" 2> /dev/null &&
+            git diff --quiet "origin/$head" HEAD; then
+            echo "$head already has these changes"
+          else
+            git push --force origin "$head"
+          fi
+
+          crate_version() { git show "$1:Cargo.toml" | sed -nE 's/^version = "(.*)"$/\1/p' | head -n 1; }
+          news="$(curl -fsSL https://data.iana.org/time-zones/tzdb/NEWS |
+            awk -v version="$LATEST" '/^Release / { print_it = ($2 == version) } print_it')"
+          {
+            echo "Updates the time zone data from IANA tzdata $CURRENT to **$LATEST**, and the crate from \`$(crate_version HEAD~1)\` to \`$(crate_version HEAD)\`."
+            echo
+            echo "- IANA release notes: https://data.iana.org/time-zones/tzdb/NEWS"
+            echo "- Unicode's resources: https://github.com/unicode-org/icu-data/tree/main/tzdata/icunew/$LATEST/44/le"
+            echo
+            echo "Changed files:"
+            echo
+            git diff --name-status HEAD~1 | sed -E 's/^([A-Z])\t(.*)$/- `\2` (\1)/'
+            echo
+            echo "<details><summary>IANA NEWS for $LATEST</summary>"
+            echo
+            echo '```text'
+            echo "${news:-Not found in NEWS.}"
+            echo '```'
+            echo
+            echo "</details>"
+            echo
+            echo "After merging, tag the merge commit \`v$(crate_version HEAD)\` to publish it to crates.io."
+            echo
+            echo "Opened by [Update tzdata]($RUN_URL)."
+          } > "$RUNNER_TEMP/body.md"
+
+          pr="$(gh pr list --head "$head" --base "$BASE" --state open --json url --jq '.[0].url')"
+          if [[ -n "$pr" ]]; then
+            gh pr edit "$pr" --title "$title" --body-file "$RUNNER_TEMP/body.md"
+            echo "::notice::Updated $pr"
+          else
+            pr="$(gh pr create --base "$BASE" --head "$head" --title "$title" --body-file "$RUNNER_TEMP/body.md")"
+            echo "::notice::Opened $pr"
+          fi
+
+          # Close PRs for older releases that this one supersedes.
+          gh pr list --base "$BASE" --state open --json number,headRefName \
+            --jq ".[] | select(.headRefName | startswith(\"tzdata/$BASE/\")) | select(.headRefName != \"$head\") | .number" |
+            while read -r old; do
+              gh pr close "$old" --delete-branch --comment "Superseded by $pr."
+            done
