@@ -22,12 +22,13 @@ pub const LIB_RS: &str = "src/lib.rs";
 
 /// The time zone resources ICU reads, as published per tzdata release under
 /// `tzdata/icunew/<version>/44/le/` in https://github.com/unicode-org/icu-data.
-pub const TZ_RESOURCES: &[&str] = &[
-    "metaZones.res",
-    "timezoneTypes.res",
-    "windowsZones.res",
-    "zoneinfo64.res",
-];
+///
+/// Unicode also publishes `metaZones.res`, but it is built from the latest
+/// CLDR rather than from tzdata, and it has to match the CLDR locale data that
+/// names its metazones. The base's own `metaZones.res` stays: the one for
+/// CLDR 48 maps `Pacific/Honolulu` to a `Hawaii` metazone that ICU 77's locale
+/// data has no names for, so its long name falls back to `GMT-10:00`.
+pub const TZ_RESOURCES: &[&str] = &["timezoneTypes.res", "windowsZones.res", "zoneinfo64.res"];
 
 const TZDATA_VERSION_PREFIX: &str = "pub const TZDATA_VERSION: &str = \"";
 

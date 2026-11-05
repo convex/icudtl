@@ -12,12 +12,13 @@ if [[ ! "$version" =~ ^[0-9]{4}[a-z]+$ ]]; then
 fi
 cd "$(dirname "$0")/.."
 
+# The base's `metaZones.res` stays; see `TZ_RESOURCES` in `xtask/src/lib.rs`.
 # `44` is the resource bundle format, readable by every ICU since 4.4, and `le`
 # is little-endian.
 url="https://raw.githubusercontent.com/unicode-org/icu-data/main/tzdata/icunew/$version/44/le"
 tmp="$(mktemp -d)"
 trap 'rm -rf "$tmp"' EXIT
-for resource in metaZones timezoneTypes windowsZones zoneinfo64; do
+for resource in timezoneTypes windowsZones zoneinfo64; do
     curl --fail --silent --show-error --location --retry 3 \
         -o "$tmp/$resource.res" "$url/$resource.res"
 done

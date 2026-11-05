@@ -6,7 +6,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-tz_resources=(metaZones.res timezoneTypes.res windowsZones.res zoneinfo64.res)
+tz_resources=(timezoneTypes.res windowsZones.res zoneinfo64.res)
 base="$(echo base/icudt*.dat)"  # e.g. base/icudt77l.dat
 tmp="$(mktemp -d)"
 trap 'rm -rf "$tmp"' EXIT

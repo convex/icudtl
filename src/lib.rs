@@ -6,10 +6,10 @@
 //! v8::icu::set_common_data_77(icudtl::ICU_DATA).unwrap();
 //! ```
 //!
-//! The data is Chromium's `icudtl.dat` for ICU 77.1 with the four time zone
-//! resources (`zoneinfo64.res`, `metaZones.res`, `timezoneTypes.res`, and
-//! `windowsZones.res`) replaced by the ones Unicode publishes for
-//! [`TZDATA_VERSION`]. See the README for details.
+//! The data is Chromium's `icudtl.dat` for ICU 77.1 with three time zone
+//! resources (`zoneinfo64.res`, `timezoneTypes.res`, and `windowsZones.res`)
+//! replaced by the ones Unicode publishes for [`TZDATA_VERSION`]. See the
+//! README for details.
 
 // From `deno_core_icudata` (MIT): V8 requires the data to be 16-byte aligned.
 #[repr(C, align(16))]
