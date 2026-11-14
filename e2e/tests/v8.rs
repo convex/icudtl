@@ -1,5 +1,5 @@
 //! Loads `ICU_DATA` into V8 and checks that `Intl` and `Temporal` use the new
-//! time zone data.
+//! time zone data, and that `Intl` still finds the locale data's zone names.
 
 /// `(time zone, expected offset at 2026-12-01T12:00Z)`. Each zone listed after
 /// New York changed in 2026 and is wrong in the ICU 77.1 release data.
@@ -11,6 +11,31 @@ const OFFSETS: &[(&str, &str)] = &[
     ("America/Winnipeg", "-05:00"),  // 2026e
     ("America/Havana", "-04:00"),    // 2026f
 ];
+
+/// `(time zone, expected "en-US" long name at 2026-12-01T12:00Z)`. Long names
+/// come from the locale data via `metaZones.res`, so they break when the two
+/// come from different CLDR releases.
+const LONG_NAMES: &[(&str, &str)] = &[
+    ("Pacific/Honolulu", "Hawaii-Aleutian Standard Time"),
+    ("America/Adak", "Hawaii-Aleutian Standard Time"),
+    // Permanent -07; Unicode's `zoneinfo64` encodes it as daylight time so
+    // that CLDR's existing metazones name it.
+    ("America/Vancouver", "Pacific Daylight Time"),
+];
+
+fn time_zone_name(scope: &mut v8::PinScope, time_zone: &str, style: &str) -> String {
+    eval(
+        scope,
+        &format!(
+            r#"new Intl.DateTimeFormat("en-US", {{
+                timeZone: "{time_zone}",
+                timeZoneName: "{style}",
+            }})
+                .formatToParts(new Date("2026-12-01T12:00:00Z"))
+                .find((part) => part.type === "timeZoneName").value"#
+        ),
+    )
+}
 
 fn eval(scope: &mut v8::PinScope, source: &str) -> String {
     let source = v8::String::new(scope, source).unwrap();
@@ -32,17 +57,7 @@ fn v8_uses_patched_tzdata() {
 
     let mut actual = Vec::new();
     for &(time_zone, _) in OFFSETS {
-        let intl = eval(
-            scope,
-            &format!(
-                r#"new Intl.DateTimeFormat("en-US", {{
-                    timeZone: "{time_zone}",
-                    timeZoneName: "longOffset",
-                }})
-                    .formatToParts(new Date("2026-12-01T12:00:00Z"))
-                    .find((part) => part.type === "timeZoneName").value"#
-            ),
-        );
+        let intl = time_zone_name(scope, time_zone, "longOffset");
         let temporal = eval(
             scope,
             &format!(
@@ -60,4 +75,14 @@ fn v8_uses_patched_tzdata() {
         actual, expected,
         "(time zone, Intl offset, Temporal offset)"
     );
+
+    let long_names: Vec<_> = LONG_NAMES
+        .iter()
+        .map(|&(time_zone, _)| (time_zone, time_zone_name(scope, time_zone, "long")))
+        .collect();
+    let expected: Vec<_> = LONG_NAMES
+        .iter()
+        .map(|&(time_zone, name)| (time_zone, name.to_owned()))
+        .collect();
+    assert_eq!(long_names, expected, "(time zone, Intl long name)");
 }
