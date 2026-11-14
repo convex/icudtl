@@ -85,4 +85,20 @@ fn v8_uses_patched_tzdata() {
         .map(|&(time_zone, name)| (time_zone, name.to_owned()))
         .collect();
     assert_eq!(long_names, expected, "(time zone, Intl long name)");
+
+    // Unicode's timezoneTypes.res aliases `Factory` to `Etc/Unknown`, which V8
+    // rejects. See "Differences from ICU 77.1" in the README.
+    assert_eq!(
+        eval(
+            scope,
+            r#"try {
+                new Intl.DateTimeFormat("en-US", { timeZone: "Factory" });
+                "ok";
+            } catch (e) {
+                e.constructor.name;
+            }"#,
+        ),
+        "RangeError",
+        "Intl with the Factory time zone"
+    );
 }
