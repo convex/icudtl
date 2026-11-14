@@ -18,8 +18,8 @@ const OFFSETS: &[(&str, &str)] = &[
 const LONG_NAMES: &[(&str, &str)] = &[
     ("Pacific/Honolulu", "Hawaii-Aleutian Standard Time"),
     ("America/Adak", "Hawaii-Aleutian Standard Time"),
-    // Permanent -07; tzdata encodes it as daylight time so that CLDR's
-    // existing metazones name it.
+    // Permanent -07; Unicode's `zoneinfo64` encodes it as daylight time so
+    // that CLDR's existing metazones name it.
     ("America/Vancouver", "Pacific Daylight Time"),
 ];
 

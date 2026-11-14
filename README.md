@@ -28,8 +28,9 @@ for the latest tzdata release. Every other item stays byte-for-byte the same.
 Unicode also publishes `metaZones`, but it comes from the latest CLDR and maps
 zones to metazones that ICU 77's locale data may not name. For example, CLDR 48
 moves `Pacific/Honolulu` to a new `Hawaii` metazone, so its long name would
-become `GMT-10:00`. The crate keeps ICU 77's `metaZones`. The 2026 Canada
-changes are encoded to work with the existing metazones.
+become `GMT-10:00`. The crate keeps ICU 77's `metaZones`. Unicode's
+`zoneinfo64` encodes the 2026 Canada changes to work with the existing
+metazones.
 
 ## Layout
 

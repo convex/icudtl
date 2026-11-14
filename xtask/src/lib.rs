@@ -20,8 +20,9 @@ pub const OUTPUT: &str = "src/icudtl.dat";
 /// The crate source, which declares `TZDATA_VERSION`.
 pub const LIB_RS: &str = "src/lib.rs";
 
-/// The time zone resources ICU reads, as published per tzdata release under
-/// `tzdata/icunew/<version>/44/le/` in https://github.com/unicode-org/icu-data.
+/// The time zone resources the crate replaces, as published per tzdata
+/// release under `tzdata/icunew/<version>/44/le/` in
+/// https://github.com/unicode-org/icu-data.
 ///
 /// Unicode also publishes `metaZones.res`, but it is built from the latest
 /// CLDR rather than from tzdata, and it has to match the CLDR locale data that
