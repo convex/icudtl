@@ -99,8 +99,8 @@ impl<'a> Package<'a> {
         })
     }
 
-    /// Returns the item whose name after the `icudt<version><endianness>/`
-    /// prefix is `name`.
+    /// Returns the index of the item whose name after the
+    /// `icudt<version><endianness>/` prefix is `name`.
     pub fn position(&self, name: &str) -> Option<usize> {
         self.names
             .iter()
@@ -110,8 +110,8 @@ impl<'a> Package<'a> {
 
 /// Returns the bytes of the package with each item whose name (after the
 /// `icudt<version><endianness>/` prefix) is a key of `replacements` swapped
-/// for the corresponding value. Every replacement must be a resource bundle
-/// that names an existing item.
+/// for the corresponding value. Every key must name an existing item, and
+/// every value must be a resource bundle.
 pub fn replace_items(
     package: &[u8],
     replacements: &BTreeMap<&str, Vec<u8>>,

@@ -39,7 +39,8 @@ fn shipped_data_is_aligned() {
 }
 
 /// ICU reads items in place, so each one must start on a 16-byte boundary of
-/// the package (which `shipped_data_is_aligned` places on one in memory).
+/// the package (which `shipped_data_is_aligned` checks is itself aligned in
+/// memory).
 #[test]
 fn shipped_items_are_aligned() {
     let shipped = Package::parse(ICU_DATA).unwrap();
