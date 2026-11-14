@@ -1,0 +1,54 @@
+# Opens an issue when ICU data for a newer ICU major version is available.
+# Moving to it means upgrading V8 at the same time, so it can't be automatic:
+# see "Versioning" in the README.
+name: Check for a new ICU major version
+
+on:
+  schedule:
+    - cron: "41 7 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          current="$(sed -nE 's/^pub const ICU_VERSION: &str = "([0-9]+)\..*";$/\1/p' src/lib.rs)"
+
+          # deno_core_icudata's minor version is the ICU major version, e.g. 0.77.0.
+          deno="$(curl -fsSL --user-agent "github.com/${{ github.repository }}" \
+            https://crates.io/api/v1/crates/deno_core_icudata | jq -r .crate.max_version)"
+          deno_major="$(cut -d . -f 2 <<< "$deno")"
+          # The ICU version Chromium (and so V8 and rusty_v8) is moving to.
+          chromium_major="$(curl -fsSL \
+            "https://chromium.googlesource.com/chromium/deps/icu/+/refs/heads/main/source/common/unicode/uvernum.h?format=TEXT" |
+            base64 --decode | sed -nE 's/^#define U_ICU_VERSION_MAJOR_NUM ([0-9]+).*/\1/p')"
+          echo "This branch: ICU $current. deno_core_icudata $deno: ICU $deno_major. Chromium: ICU $chromium_major."
+
+          newest="$(printf '%s\n' "$deno_major" "$chromium_major" | sort -n | tail -n 1)"
+          if (( newest <= current )); then
+            echo "::notice::ICU $current is the newest major version"
+            exit 0
+          fi
+          title="ICU $newest data is available"
+          if [[ -n "$(gh issue list --state open --limit 200 --json title --jq ".[] | select(.title == \"$title\")")" ]]; then
+            echo "::notice::\"$title\" is already open"
+            exit 0
+          fi
+          gh issue create --title "$title" --body-file - <<BODY
+          This crate ships ICU $current data. A newer ICU major version is available:
+
+          - [\`deno_core_icudata\`](https://crates.io/crates/deno_core_icudata) $deno (ICU $deno_major)
+          - [Chromium's ICU](https://chromium.googlesource.com/chromium/deps/icu/+/refs/heads/main/source/common/unicode/uvernum.h) (ICU $chromium_major)
+
+          V8 reads ICU data only for the ICU major version it was built with, so consumers must upgrade V8 to ICU $newest at the same time as they switch to the new data. Once a V8 release built with ICU $newest is in use, follow "Versioning" in the README: branch \`icu-$current\` from \`main\` and add it to the branches in \`update-tzdata.yml\`, then move \`main\` to the ICU $newest base data.
+
+          Opened by [Check for a new ICU major version](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}).
+          BODY

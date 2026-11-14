@@ -56,6 +56,43 @@ scripts/check-icupkg.sh         # optional; needs icupkg (icu-devtools)
   the base, update `BASE` in `xtask/src/lib.rs`, `ICU_VERSION`, and the
   `set_common_data_*` references, and set the version to `0.78.0`.
 
+## Automation
+
+- `update-tzdata.yml` (daily): when Unicode publishes a newer tzdata release,
+  opens or updates a PR "Update tzdata to <version>" for each branch in its
+  `matrix.branch` list. Add `icu-<major>` branches there.
+- `check-icu-major.yml` (weekly): opens an issue when a newer ICU major is
+  available.
+- `release.yml`: publishes to crates.io when a `v<version>` tag is pushed. See
+  [Releasing](#releasing).
+
+Required configuration:
+
+- A token for update PRs, so CI runs on them: either a GitHub App (variable
+  `TZDATA_APP_CLIENT_ID`, secret `TZDATA_APP_PRIVATE_KEY`) or a fine-grained
+  PAT (secret `TZDATA_UPDATE_TOKEN`), with read and write access to Contents
+  and Pull requests. Without one, the workflow falls back to `GITHUB_TOKEN`.
+  That needs "Allow GitHub Actions to create and approve pull requests"
+  enabled, and CI won't run on those PRs.
+- A [trusted publisher](https://crates.io/docs/trusted-publishing) for
+  `icudtl` on crates.io: repository `convex/icudtl`, workflow `release.yml`.
+
+## Releasing
+
+After the version bump is on the branch (for tzdata updates, the update PR
+bumps it), tag that commit with the crate version and push the tag:
+
+```sh
+git tag v0.77.1
+git push origin v0.77.1
+```
+
+`release.yml` runs CI, checks that the tag matches `Cargo.toml`, publishes to
+crates.io, and creates the GitHub release.
+
+crates.io only lets you add a trusted publisher to a crate that exists, so the
+first version is published by hand with `cargo publish` and a personal token.
+
 ## License
 
 The ICU data and Unicode's time zone resources are under the Unicode License v3

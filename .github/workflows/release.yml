@@ -1,0 +1,45 @@
+# Publishes the crate to crates.io when a version tag (e.g. `v0.77.1`) is
+# pushed. Authenticates with crates.io trusted publishing: see the README.
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+jobs:
+  ci:
+    uses: ./.github/workflows/ci.yml
+
+  publish:
+    needs: ci
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      # For crates.io trusted publishing.
+      id-token: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - run: rustup toolchain install stable --profile minimal
+      - name: Check that the tag matches the crate version
+        id: version
+        run: |
+          version="$(sed -nE 's/^version = "(.*)"$/\1/p' Cargo.toml | head -n 1)"
+          if [[ "$GITHUB_REF_NAME" != "v$version" ]]; then
+            echo "::error::Tag $GITHUB_REF_NAME doesn't match the crate version $version"
+            exit 1
+          fi
+          echo "tzdata=$(sed -nE 's/^pub const TZDATA_VERSION: &str = "(.*)";$/\1/p' src/lib.rs)" >> "$GITHUB_OUTPUT"
+          echo "icu=$(sed -nE 's/^pub const ICU_VERSION: &str = "(.*)";$/\1/p' src/lib.rs)" >> "$GITHUB_OUTPUT"
+      - uses: rust-lang/crates-io-auth-action@3268eb413133e2960fa4ae0e963ca76380c54cd9 # v1.0.6
+        id: auth
+      - run: cargo publish --locked --package icudtl
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}
+      - run: gh release create "$GITHUB_REF_NAME" --verify-tag --title "$GITHUB_REF_NAME" --notes "ICU $ICU with IANA tzdata $TZDATA." --generate-notes
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ICU: ${{ steps.version.outputs.icu }}
+          TZDATA: ${{ steps.version.outputs.tzdata }}
