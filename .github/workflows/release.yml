@@ -16,6 +16,8 @@ jobs:
   publish:
     needs: ci
     runs-on: ubuntu-latest
+    # The crates.io trusted publisher only accepts jobs in this environment.
+    environment: release
     permissions:
       contents: write
       # For crates.io trusted publishing.

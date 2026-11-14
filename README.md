@@ -95,8 +95,12 @@ Required configuration:
   and Pull requests. Without one, the workflow falls back to `GITHUB_TOKEN`.
   That needs "Allow GitHub Actions to create and approve pull requests"
   enabled, and CI won't run on those PRs.
+- A `release` environment (Settings → Environments) whose deployment rule
+  only allows tags matching `v*`. Optionally, add required reviewers to approve
+  each publish.
 - A [trusted publisher](https://crates.io/docs/trusted-publishing) for
-  `icudtl` on crates.io: repository `convex/icudtl`, workflow `release.yml`.
+  `icudtl` on crates.io: repository `convex/icudtl`, workflow `release.yml`,
+  environment `release`.
 
 ## Releasing
 
