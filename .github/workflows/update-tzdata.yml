@@ -151,7 +151,7 @@ jobs:
             gh pr edit "$pr" --title "$title" --body-file "$RUNNER_TEMP/body.md"
             echo "::notice::Updated $pr"
           else
-            pr="$(gh pr create --base "$BASE" --head "$head" --title "$title" --body-file "$RUNNER_TEMP/body.md")"
+            pr="$(gh pr create --base "$BASE" --head "$head" --title "$title" --body-file "$RUNNER_TEMP/body.md" --assignee Nicolapps)"
             echo "::notice::Opened $pr"
           fi
 

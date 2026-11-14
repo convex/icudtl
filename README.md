@@ -87,6 +87,11 @@ scripts/check-icupkg.sh         # optional; needs icupkg (icu-devtools)
 - `release.yml`: publishes to crates.io when a `v<version>` tag is pushed. See
   [Releasing](#releasing).
 
+The update PRs and ICU major issues are assigned to @Nicolapps, and
+`.github/CODEOWNERS` requests their review on every PR. GitHub doesn't request
+a review from a PR's author, so the update PRs need a GitHub App token (not
+@Nicolapps's PAT) for that request to happen.
+
 Required configuration:
 
 - A token for update PRs, so CI runs on them: either a GitHub App (variable
