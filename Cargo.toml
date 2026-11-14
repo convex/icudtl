@@ -21,5 +21,7 @@ include = [
 ]
 
 [workspace]
-members = ["xtask"]
+members = ["e2e", "xtask"]
+# The end-to-end test downloads a prebuilt V8, so it only builds when asked for
+# with `-p e2e`.
 default-members = [".", "xtask"]
