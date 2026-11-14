@@ -3,7 +3,7 @@ name = "icudtl"
 # The major and minor versions track the ICU major version of the data (0.77.x
 # is ICU 77, like `deno_core_icudata`). The patch version is bumped for every
 # tzdata update.
-version = "0.77.1"
+version = "0.77.2"
 edition = "2021"
 description = "ICU 77 common data (icudtl.dat) for V8, with current IANA time zone data"
 license = "MIT AND Unicode-3.0"
