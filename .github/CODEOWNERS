@@ -1,0 +1,3 @@
+# Requests a review from the maintainer on every PR, including the tzdata update
+# PRs that `update-tzdata.yml` opens.
+* @Nicolapps

@@ -42,7 +42,7 @@ jobs:
             echo "::notice::\"$title\" is already open"
             exit 0
           fi
-          gh issue create --title "$title" --body-file - <<BODY
+          gh issue create --title "$title" --assignee Nicolapps --body-file - <<BODY
           This crate ships ICU $current data. A newer ICU major version is available:
 
           - [\`deno_core_icudata\`](https://crates.io/crates/deno_core_icudata) $deno (ICU $deno_major)
