@@ -285,7 +285,7 @@ dependencies = [
 
 [[package]]
 name = "icudtl"
-version = "0.77.0"
+version = "0.77.1"
 
 [[package]]
 name = "itertools"
