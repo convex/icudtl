@@ -41,7 +41,7 @@ jobs:
           fi
 
   # Loads the data into V8 and checks `Intl` and `Temporal`. Downloads a
-  # prebuilt V8, so it's slow and only runs in CI.
+  # prebuilt V8, so it's slow and isn't part of the default `cargo test`.
   e2e:
     runs-on: ubuntu-latest
     steps:
