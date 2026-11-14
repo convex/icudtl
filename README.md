@@ -32,6 +32,17 @@ become `GMT-10:00`. The crate keeps ICU 77's `metaZones`. Unicode's
 `zoneinfo64` encodes the 2026 Canada changes to work with the existing
 metazones.
 
+## Differences from ICU 77.1
+
+Unicode's `timezoneTypes.res` for recent tzdata releases maps IANA's `Factory`
+placeholder zone to `Etc/Unknown`, which V8 rejects. With this data,
+`new Intl.DateTimeFormat(locale, { timeZone: "Factory" })` throws a
+`RangeError` instead of formatting as GMT (Temporal rejects `Factory` with
+either data). Chromium removes the alias when it updates tzdata
+([crbug.com/381620359](https://crbug.com/381620359)); this crate keeps
+Unicode's files unchanged. It only matters if the system time zone or user code
+uses `Factory`.
+
 ## Layout
 
 - `base/icudt77l.dat`: the unmodified ICU 77.1 data, byte-identical to
