@@ -26,4 +26,4 @@ pub const ICU_VERSION: &str = "77.1";
 
 /// The IANA tzdata release of the time zone data. Written by `cargo xtask
 /// generate`.
-pub const TZDATA_VERSION: &str = "2026e";
+pub const TZDATA_VERSION: &str = "2026f";
