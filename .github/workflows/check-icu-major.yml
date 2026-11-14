@@ -1,6 +1,6 @@
 # Opens an issue when ICU data for a newer ICU major version is available.
 # Moving to it means upgrading V8 at the same time, so it can't be automatic:
-# see "Versioning and branches" in the README.
+# see "Versioning" in the README.
 name: Check for a new ICU major version
 
 on:
@@ -48,7 +48,7 @@ jobs:
           - [\`deno_core_icudata\`](https://crates.io/crates/deno_core_icudata) $deno (ICU $deno_major)
           - [Chromium's ICU](https://chromium.googlesource.com/chromium/deps/icu/+/refs/heads/main/source/common/unicode/uvernum.h) (ICU $chromium_major)
 
-          V8 reads ICU data only for the ICU major version it was built with, so consumers must upgrade V8 to ICU $newest at the same time as they switch to the new data. Once a V8 release built with ICU $newest is in use, follow "Versioning and branches" in the README: branch \`icu-$current\` from \`main\` and add it to the branches in \`update-tzdata.yml\`, then move \`main\` to the ICU $newest base data.
+          V8 reads ICU data only for the ICU major version it was built with, so consumers must upgrade V8 to ICU $newest at the same time as they switch to the new data. Once a V8 release built with ICU $newest is in use, follow "Versioning" in the README: branch \`icu-$current\` from \`main\` and add it to the branches in \`update-tzdata.yml\`, then move \`main\` to the ICU $newest base data.
 
           Opened by [Check for a new ICU major version](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}).
           BODY
